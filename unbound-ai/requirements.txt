@@ -1,1 +1,4 @@
 torch>=2.1
+numpy
+# Facultatif, seulement pour prepare_data.py :
+# datasets

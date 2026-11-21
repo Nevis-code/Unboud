@@ -39,6 +39,18 @@ python generate.py --model unbound-ai.pt --prompt "Bonjour" --n 300 --temperatur
 
 Options utiles de `train.py` : `--dim`, `--layers`, `--heads`, `--ctx`, `--batch`, `--lr`, `--steps`, `--dropout`. Tape `python train.py --help` pour tout voir.
 
+## Récupérer du texte
+
+`prepare_data.py` télécharge du texte français (Wikipédia ou Wikisource, via Hugging Face) et le met dans un fichier prêt pour l'entraînement. Le texte est lu en streaming : seule la quantité demandée est téléchargée.
+
+```bash
+pip install datasets
+python prepare_data.py --out data/wikipedia_fr.txt --chars 4000000
+python train.py --data data/wikipedia_fr.txt --out unbound-wiki.pt --dim 384 --layers 6 --heads 6 --ctx 256
+```
+
+Tu peux aussi assembler plusieurs fichiers avec `cat data/a.txt data/b.txt > data/corpus.txt`. Les caractères rares (alphabets étrangers, émojis) sont retirés, car le modèle apprend caractère par caractère. Vérifie les licences des textes que tu utilises avant de publier un modèle.
+
 ## Lire les résultats
 
 Pendant l'entraînement, deux valeurs s'affichent :
