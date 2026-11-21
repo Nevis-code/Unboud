@@ -1,4 +1,4 @@
-"""Entraînement du mini-GPT.
+"""Entraînement d'Unbound AI.
 
 Exemple :
     python train.py --data data/exemple.txt --steps 3000
@@ -16,14 +16,14 @@ import time
 
 import torch
 
-from model import GPTConfig, MiniGPT
+from model import UnboundConfig, UnboundAI
 from tokenizer import CharTokenizer
 
 
 def parse_args():
-    p = argparse.ArgumentParser(description="Entraîne un mini-GPT sur un fichier texte")
+    p = argparse.ArgumentParser(description="Entraîne Unbound AI sur un fichier texte")
     p.add_argument("--data", default="data/exemple.txt", help="fichier texte d'entraînement")
-    p.add_argument("--out", default="mini-gpt.pt", help="fichier du modèle sauvegardé")
+    p.add_argument("--out", default="unbound-ai.pt", help="fichier du modèle sauvegardé")
     p.add_argument("--ctx", type=int, default=128, help="longueur du contexte")
     p.add_argument("--dim", type=int, default=128)
     p.add_argument("--heads", type=int, default=4)
@@ -95,11 +95,11 @@ def main():
     print(f"{len(data):,} caractères, {tok.vocab_size} caractères distincts")
 
     # --- Modèle ----------------------------------------------------------
-    cfg = GPTConfig(
+    cfg = UnboundConfig(
         vocab_size=tok.vocab_size, ctx=args.ctx, dim=args.dim,
         heads=args.heads, layers=args.layers, dropout=args.dropout,
     )
-    model = MiniGPT(cfg).to(device)
+    model = UnboundAI(cfg).to(device)
     n_params = sum(p.numel() for p in model.parameters())
     print(f"Modèle : {n_params / 1e6:.2f} M de paramètres")
 
@@ -108,6 +108,7 @@ def main():
 
     # --- Boucle d'entraînement ------------------------------------------
     best_val = float("inf")
+    warned = False  # pour n'afficher l'avertissement de surapprentissage qu'une fois
     t0 = time.time()
     for step in range(args.steps + 1):
         for group in opt.param_groups:
@@ -118,6 +119,13 @@ def main():
             losses = estimate_loss(model, splits, args, device)
             print(f"étape {step:5d} | train {losses['train']:.3f} | val {losses['val']:.3f}"
                   f" | {time.time() - t0:.0f}s")
+            # Si la validation est nettement pire que son meilleur score alors que
+            # l'entraînement continue de s'améliorer : le modèle apprend par cœur.
+            if not warned and losses["val"] > best_val + 0.3:
+                warned = True
+                print("  /!\\ val remonte : surapprentissage. Le texte est trop court pour ce "
+                      "modèle. Ajoute du texte, ou utilise un modèle plus petit "
+                      "(--dim 256 --layers 4 --heads 4 --dropout 0.2).")
             if losses["val"] < best_val:
                 best_val = losses["val"]
                 torch.save(
@@ -135,7 +143,7 @@ def main():
         opt.step()                      # 3. on corrige
 
     print(f"Terminé. Meilleur modèle (val {best_val:.3f}) sauvegardé dans {args.out}")
-    print("Teste-le avec : python generate.py --prompt \"Bonjour\"")
+    print(f"Teste-le avec : python generate.py --model {args.out} --prompt \"Bonjour\"")
 
 
 if __name__ == "__main__":

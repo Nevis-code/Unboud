@@ -1,4 +1,4 @@
-"""Le modèle : un petit GPT (architecture "transformer décodeur").
+"""Le modèle d'Unbound AI : un petit modèle de langage (architecture "transformer décodeur").
 
 Chemin d'un texte dans le modèle :
     numéros de tokens
@@ -17,7 +17,7 @@ import torch.nn.functional as F
 
 
 @dataclass
-class GPTConfig:
+class UnboundConfig:
     vocab_size: int          # nombre de tokens différents
     ctx: int = 128           # longueur max du contexte (combien de tokens le modèle "voit")
     dim: int = 128           # taille des vecteurs (largeur du modèle)
@@ -95,7 +95,7 @@ class Block(nn.Module):
         return x
 
 
-class MiniGPT(nn.Module):
+class UnboundAI(nn.Module):
     def __init__(self, cfg):
         super().__init__()
         self.cfg = cfg
@@ -109,7 +109,7 @@ class MiniGPT(nn.Module):
 
     @staticmethod
     def _init_weights(module):
-        # Petits poids de départ aléatoires : point de départ standard des GPT
+        # Petits poids de départ aléatoires : point de départ standard des transformers
         if isinstance(module, (nn.Linear, nn.Embedding)):
             nn.init.normal_(module.weight, mean=0.0, std=0.02)
             if isinstance(module, nn.Linear) and module.bias is not None:
